@@ -52,6 +52,8 @@ namespace EvolveCDB.Endpoints
                             resultCards.Add(matchingCard);
                         }
                     }
+                    else
+                        Console.WriteLine($"NOT FOUND: {mc.CardNumber}");
                 }
 
                 foreach (var ec in naviDeck.EvolveDeck)
@@ -64,6 +66,8 @@ namespace EvolveCDB.Endpoints
                             resultCards.Add(matchingEvolveCard);
                         }
                     }
+                    else
+                        Console.WriteLine($"NOT FOUND: {ec.CardNumber}");
                 }
 
                 return [.. resultCards];
