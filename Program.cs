@@ -3,7 +3,9 @@ using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.Routing.Constraints;
+
 
 namespace EvolveCDB
 {
@@ -12,6 +14,10 @@ namespace EvolveCDB
         private static void Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
+
+            builder.Services.Configure<RouteOptions>(options => options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -55,8 +61,12 @@ namespace EvolveCDB
 
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
+            
 
             var app = builder.Build();
+
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
 
             app.MapGroup("/api/cards")
