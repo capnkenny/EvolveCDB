@@ -1,1 +1,1 @@
-web: cd dist/; ./EvolveCDB --urls http://*:$PORT
+web: cd bin/publish/; ./EvolveCDB --urls http://*:$PORT
