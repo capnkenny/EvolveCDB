@@ -1,10 +1,9 @@
 using EvolveCDB.Endpoints;
 using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
+using Microsoft.AspNetCore.Routing.Constraints;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.AspNetCore.Routing.Constraints;
 
 
 namespace EvolveCDB
@@ -17,7 +16,21 @@ namespace EvolveCDB
 
             builder.Services.Configure<RouteOptions>(options => options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options => 
+            {                
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+                {
+                    Version = "v1",
+                    Title = "EvolveCDB",
+                    Description = "A RESTful API for retrieving Shadowverse: Evolve cards and decks.\n\n<i>All literal information presented by the API and on this site about Shadowverse and Shadowverse: Evolve, including card images and card text is copyright Cygames, Inc. This website is not produced by, endorsed by, supported by, or affiliated with Cygames Inc.</i>",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                    {
+                        Name = "Ken \"kennybrew\" Johnson",
+                        Url = new Uri("https://github.com/capnkenny/EvolveCDB")
+                    }
+
+                });
+            });
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -65,8 +78,12 @@ namespace EvolveCDB
 
             var app = builder.Build();
 
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            app.MapSwagger("/{documentName}/swagger.json");
+            app.UseSwaggerUI(options => {
+                //Temporary until UI is built.
+                options.SwaggerEndpoint("/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
 
 
             app.MapGroup("/api/cards")
