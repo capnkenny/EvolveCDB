@@ -1,6 +1,4 @@
 ﻿using EvolveCDB.Model;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace EvolveCDB.Endpoints
 {
@@ -46,7 +44,7 @@ namespace EvolveCDB.Endpoints
                 cardList = cardList.Where(card => card.Cost == cost);
             }
 
-            return cardList.ToArray();
+            return [.. cardList];
         }
     }
 }

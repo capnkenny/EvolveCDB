@@ -17,62 +17,63 @@ namespace EvolveCDB.Endpoints
 
         public async Task<Card[]?> GetDeckFromCode(string code)
         {
-            var httpClient = _httpClientFactory.CreateClient("bushiroad");
-            httpClient.DefaultRequestHeaders.Add("Referer", $"https://decklog-en.bushiroad.com/view/{code}");
-            var response = await httpClient.GetAsync($"system/app/api/view/{code}");
-            response.EnsureSuccessStatusCode();
-
-            string responseJson = await response.Content.ReadAsStringAsync();
-
-            if (JsonSerializer.Deserialize(responseJson, typeof(NaviDeckList), SourceGenerationContext.Default) is NaviDeckList naviDeck)
+            using (var httpClient = _httpClientFactory.CreateClient("bushiroad"))
             {
-                if (naviDeck.GameId != ShadowverseEvolveGameId)
-                {
-                    throw new ArgumentException("Deck retrieved was not a valid Shadowverse: Evolve deck.");
-                }
+                httpClient.DefaultRequestHeaders.Add("Referer", $"https://decklog-en.bushiroad.com/view/{code}");
+                var response = await httpClient.GetAsync($"system/app/api/view/{code}");
+                response.EnsureSuccessStatusCode();
 
-                List<Card> resultCards = [];
-                //This is dumb, usually only one leader card
-                foreach (var lc in naviDeck.LeaderDeck)
+                string responseJson = await response.Content.ReadAsStringAsync();
+
+                if (JsonSerializer.Deserialize(responseJson, typeof(NaviDeckList), SourceGenerationContext.Default) is NaviDeckList naviDeck)
                 {
-                    var matching = _cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
-                    if (matching.Any())
+                    if (naviDeck.GameId != ShadowverseEvolveGameId)
                     {
-                        resultCards.AddRange(matching);
+                        throw new ArgumentException("Deck retrieved was not a valid Shadowverse: Evolve deck.");
                     }
-                }
 
-                foreach (var mc in naviDeck.MainDeck)
-                {
-                    var matchingCard = _cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
-                    if (matchingCard is not null)
+                    List<Card> resultCards = [];
+                    //This is dumb, usually only one leader card
+                    foreach (var lc in naviDeck.LeaderDeck)
                     {
-                        for (int i = 0; i < mc.Num; i++)
+                        var matching = _cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                        if (matching.Any())
                         {
-                            resultCards.Add(matchingCard);
+                            resultCards.AddRange(matching);
                         }
                     }
-                    else
-                        Console.WriteLine($"NOT FOUND: {mc.CardNumber}");
-                }
 
-                foreach (var ec in naviDeck.EvolveDeck)
-                {
-                    var matchingEvolveCard = _cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
-                    if (matchingEvolveCard is not null)
+                    foreach (var mc in naviDeck.MainDeck)
                     {
-                        for (int i = 0; i < ec.Num; i++)
+                        var matchingCard = _cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                        if (matchingCard is not null)
                         {
-                            resultCards.Add(matchingEvolveCard);
+                            for (int i = 0; i < mc.Num; i++)
+                            {
+                                resultCards.Add(matchingCard);
+                            }
                         }
+                        else
+                            Console.WriteLine($"NOT FOUND: {mc.CardNumber}");
                     }
-                    else
-                        Console.WriteLine($"NOT FOUND: {ec.CardNumber}");
-                }
 
-                return [.. resultCards];
+                    foreach (var ec in naviDeck.EvolveDeck)
+                    {
+                        var matchingEvolveCard = _cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                        if (matchingEvolveCard is not null)
+                        {
+                            for (int i = 0; i < ec.Num; i++)
+                            {
+                                resultCards.Add(matchingEvolveCard);
+                            }
+                        }
+                        else
+                            Console.WriteLine($"NOT FOUND: {ec.CardNumber}");
+                    }
+
+                    return [.. resultCards];
+                }
             }
-
             return null;
         }
 
