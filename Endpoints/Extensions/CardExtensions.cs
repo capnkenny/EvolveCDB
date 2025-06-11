@@ -1,12 +1,13 @@
 ﻿using EvolveCDB.Model;
+using System.Text.RegularExpressions;
 
 namespace EvolveCDB.Endpoints.Extensions
 {
-    public static class CardExtensions
+    public static partial class CardExtensions
     {
         public static Card[] MapToCardTypes(FlatCard[] flats)
         {
-            List<Card> cardArray = new();
+            List<Card> cardArray = [];
             foreach (FlatCard card in flats)
             {
                 Card c = new()
@@ -19,7 +20,7 @@ namespace EvolveCDB.Endpoints.Extensions
                     Description = card.Description,
                     Name = card.Name,
                     ClassType = card.ClassType,
-                    Kind = card.Kind,
+                    Kind = PascalCaseRegex().Replace(card.Kind, " / "),
                     ImgUrl = card.ImgUrl,
                     LimitedToCount = card.LimitedToCount,
                     Cost = card.Cost,
@@ -36,7 +37,13 @@ namespace EvolveCDB.Endpoints.Extensions
                 cardArray.Add(c);
             }
 
-            return cardArray.ToArray();
+            return [.. cardArray];
         }
+
+
+        [GeneratedRegex("(?<=[a-z])(?=[A-Z])|(?<=[0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", RegexOptions.CultureInvariant)]
+        internal static partial Regex PascalCaseRegex();
+
     }
 }
+

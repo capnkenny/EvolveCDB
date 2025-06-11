@@ -1,17 +1,36 @@
 using EvolveCDB.Endpoints;
 using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
+using Microsoft.AspNetCore.Routing.Constraints;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 
 namespace EvolveCDB
 {
     internal class Program
     {
-        private static async Task Main(string[] args)
+        private static void Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
 
+            builder.Services.Configure<RouteOptions>(options => options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options => 
+            {                
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+                {
+                    Version = "v1",
+                    Title = "EvolveCDB",
+                    Description = "A RESTful API for retrieving Shadowverse: Evolve cards and decks.\n\n<i>All literal information presented by the API and on this site about Shadowverse and Shadowverse: Evolve, including card images and card text is copyright Cygames, Inc. This website is not produced by, endorsed by, supported by, or affiliated with Cygames Inc.</i>",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                    {
+                        Name = "Ken \"kennybrew\" Johnson",
+                        Url = new Uri("https://github.com/capnkenny/EvolveCDB")
+                    }
+
+                });
+            });
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -43,22 +62,28 @@ namespace EvolveCDB
             });
 
             builder.Services.AddSingleton(factory => {
-                using (var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github"))
+                using var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github");
+                string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
+                if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
                 {
-                    string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
-                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
-                    {
-                        throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
-                    }
-                    
-                    return CardExtensions.MapToCardTypes(flatCards.ToArray());
+                    throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
                 }
+
+                return CardExtensions.MapToCardTypes([.. flatCards]);
             });
 
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
+            
 
             var app = builder.Build();
+
+            app.MapSwagger("/{documentName}/swagger.json");
+            app.UseSwaggerUI(options => {
+                //Temporary until UI is built.
+                options.SwaggerEndpoint("/v1/swagger.json", "v1");
+                options.RoutePrefix = string.Empty;
+            });
 
 
             app.MapGroup("/api/cards")
@@ -76,6 +101,9 @@ namespace EvolveCDB
 [JsonSerializable(typeof(FlatCard))]
 [JsonSerializable(typeof(List<FlatCard>))]
 [JsonSerializable(typeof(DeckList))]
+[JsonSerializable(typeof(List<AbbreviatedCard>))]
+[JsonSerializable(typeof(AbbreviatedCard))]
+[JsonSerializable(typeof(AbbreviatedDeckList))]
 [JsonSerializable(typeof(AlternateSide))]
 [JsonSerializable(typeof(Card))]
 [JsonSerializable(typeof(Card[]))]
