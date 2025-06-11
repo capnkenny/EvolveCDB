@@ -3,15 +3,15 @@ using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 namespace EvolveCDB
 {
     internal class Program
     {
-        private static async Task Main(string[] args)
+        private static void Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
-
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -76,6 +76,9 @@ namespace EvolveCDB
 [JsonSerializable(typeof(FlatCard))]
 [JsonSerializable(typeof(List<FlatCard>))]
 [JsonSerializable(typeof(DeckList))]
+[JsonSerializable(typeof(List<AbbreviatedCard>))]
+[JsonSerializable(typeof(AbbreviatedCard))]
+[JsonSerializable(typeof(AbbreviatedDeckList))]
 [JsonSerializable(typeof(AlternateSide))]
 [JsonSerializable(typeof(Card))]
 [JsonSerializable(typeof(Card[]))]

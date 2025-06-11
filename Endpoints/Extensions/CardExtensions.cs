@@ -1,8 +1,9 @@
 ﻿using EvolveCDB.Model;
+using System.Text.RegularExpressions;
 
 namespace EvolveCDB.Endpoints.Extensions
 {
-    public static class CardExtensions
+    public static partial class CardExtensions
     {
         public static Card[] MapToCardTypes(FlatCard[] flats)
         {
@@ -19,7 +20,7 @@ namespace EvolveCDB.Endpoints.Extensions
                     Description = card.Description,
                     Name = card.Name,
                     ClassType = card.ClassType,
-                    Kind = card.Kind,
+                    Kind = PascalCaseRegex().Replace(card.Kind, " / "),
                     ImgUrl = card.ImgUrl,
                     LimitedToCount = card.LimitedToCount,
                     Cost = card.Cost,
@@ -38,5 +39,11 @@ namespace EvolveCDB.Endpoints.Extensions
 
             return cardArray.ToArray();
         }
+
+
+        [GeneratedRegex("(?<=[a-z])(?=[A-Z])|(?<=[0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", RegexOptions.CultureInvariant)]
+        internal static partial Regex PascalCaseRegex();
+
     }
 }
+

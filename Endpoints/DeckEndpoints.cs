@@ -15,7 +15,39 @@ namespace EvolveCDB.Endpoints
             _httpClientFactory = factory;
         }
 
-        public async Task<Card[]?> GetDeckFromCode(string code)
+        public async Task<AbbreviatedDeckList?> GetShortenedDeckListFromCode(string code)
+        {
+            DeckList? list = await GetDeckFromCode(code);
+            if (list is null)
+            {
+                throw new ArgumentException("Could not get the deck from the deck code provided");
+            }
+
+            var distinctMain = list.MainCards.DistinctBy(card => card.CardId);
+            var distinctEvolve = list.EvolveCards.DistinctBy(card => card.CardId);
+
+            return new AbbreviatedDeckList
+            {
+                DeckCode = code,
+                LeaderCardId = list.LeaderCard.CardId,
+                MainCards = [.. distinctMain.Select(card => { 
+                    return new AbbreviatedCard 
+                    { 
+                        CardId = card.CardId,
+                        Copies = list.MainCards.Count(c =>  c.CardId == card.CardId),
+                    };
+                })],
+                EvolveCards = [.. distinctEvolve.Select(card => {
+                    return new AbbreviatedCard
+                    {
+                        CardId = card.CardId,
+                        Copies = list.EvolveCards.Count(c => c.CardId == card.CardId),
+                    };
+                })],
+            };
+        }
+
+        public async Task<DeckList?> GetDeckFromCode(string code)
         {
             using (var httpClient = _httpClientFactory.CreateClient("bushiroad"))
             {
@@ -32,14 +64,16 @@ namespace EvolveCDB.Endpoints
                         throw new ArgumentException("Deck retrieved was not a valid Shadowverse: Evolve deck.");
                     }
 
-                    List<Card> resultCards = [];
-                    //This is dumb, usually only one leader card
+                    Card leaderCard = null!;
+                    List<Card> mainCardResults = [];
+                    List<Card> evolveCardResults = [];
+                    
                     foreach (var lc in naviDeck.LeaderDeck)
                     {
                         var matching = _cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                         if (matching.Any())
                         {
-                            resultCards.AddRange(matching);
+                            leaderCard = matching.First();
                         }
                     }
 
@@ -50,11 +84,11 @@ namespace EvolveCDB.Endpoints
                         {
                             for (int i = 0; i < mc.Num; i++)
                             {
-                                resultCards.Add(matchingCard);
+                                mainCardResults.Add(matchingCard);
                             }
                         }
                         else
-                            Console.WriteLine($"NOT FOUND: {mc.CardNumber}");
+                            Console.WriteLine($"-- NOT FOUND: {mc.CardNumber}");
                     }
 
                     foreach (var ec in naviDeck.EvolveDeck)
@@ -64,14 +98,20 @@ namespace EvolveCDB.Endpoints
                         {
                             for (int i = 0; i < ec.Num; i++)
                             {
-                                resultCards.Add(matchingEvolveCard);
+                                evolveCardResults.Add(matchingEvolveCard);
                             }
                         }
                         else
-                            Console.WriteLine($"NOT FOUND: {ec.CardNumber}");
+                            Console.WriteLine($"-- NOT FOUND: {ec.CardNumber}");
                     }
 
-                    return [.. resultCards];
+                    return new DeckList 
+                    {
+                        DeckCode = code,
+                        LeaderCard = leaderCard,
+                        MainCards = mainCardResults,
+                        EvolveCards = evolveCardResults
+                    };
                 }
             }
             return null;

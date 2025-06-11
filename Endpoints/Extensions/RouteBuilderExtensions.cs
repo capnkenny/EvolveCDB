@@ -28,6 +28,8 @@ namespace EvolveCDB.Endpoints.Extensions
             //Route building
             groupBuilder.MapGet("{deckCode}", async (DeckEndpoints endpointInstance, string deckCode) => await endpointInstance.GetDeckFromCode(deckCode));
 
+            groupBuilder.MapGet("{deckCode}/short", async (DeckEndpoints endpointInstance, string deckCode) => await endpointInstance.GetShortenedDeckListFromCode(deckCode));
+
             return groupBuilder;
         }
     }
