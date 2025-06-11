@@ -1,11 +1,8 @@
 using EvolveCDB.Endpoints;
 using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 
 namespace EvolveCDB
 {
@@ -14,6 +11,7 @@ namespace EvolveCDB
         private static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
+
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
@@ -44,23 +42,19 @@ namespace EvolveCDB
                 conf.BaseAddress = new("https://raw.githubusercontent.com");
             });
 
-            var provider = builder.Services.BuildServiceProvider();
+            builder.Services.AddSingleton(factory => {
+                using (var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github"))
+                {
+                    string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
+                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
+                    {
+                        throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
+                    }
+                    
+                    return CardExtensions.MapToCardTypes(flatCards.ToArray());
+                }
+            });
 
-            string? json = null;
-            
-            using (var scope = provider.CreateScope())
-            {
-                var githubClient = scope.ServiceProvider.GetService<IHttpClientFactory>().CreateClient("github");
-
-                json = await githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json");
-            }
-
-            //TODO: make this read from the GH repo
-            if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
-            {
-                throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
-            }
-            builder.Services.AddSingleton(CardExtensions.MapToCardTypes(flatCards.ToArray()));
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
 
