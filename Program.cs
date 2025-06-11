@@ -46,7 +46,7 @@ namespace EvolveCDB
 
             var provider = builder.Services.BuildServiceProvider();
 
-            string json = File.ReadAllText("cards.json");
+            string? json = null;
             
             using (var scope = provider.CreateScope())
             {
