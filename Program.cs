@@ -11,7 +11,7 @@ namespace EvolveCDB
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
 
@@ -39,8 +39,23 @@ namespace EvolveCDB
                 conf.DefaultRequestHeaders.Add("TE", "trailers");
             });
 
-            //TODO: make this read from the GH repo
+            builder.Services.AddHttpClient("github", conf =>
+            {
+                conf.BaseAddress = new("https://raw.githubusercontent.com");
+            });
+
+            var provider = builder.Services.BuildServiceProvider();
+
             string json = File.ReadAllText("cards.json");
+            
+            using (var scope = provider.CreateScope())
+            {
+                var githubClient = scope.ServiceProvider.GetService<IHttpClientFactory>().CreateClient("github");
+
+                json = await githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json");
+            }
+
+            //TODO: make this read from the GH repo
             if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
             {
                 throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
