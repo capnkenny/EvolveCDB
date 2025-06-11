@@ -1,0 +1,1 @@
+web: cd dist/; ./EvolveCDB --urls http://*:$PORT
