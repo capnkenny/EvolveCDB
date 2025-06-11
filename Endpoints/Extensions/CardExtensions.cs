@@ -7,7 +7,7 @@ namespace EvolveCDB.Endpoints.Extensions
     {
         public static Card[] MapToCardTypes(FlatCard[] flats)
         {
-            List<Card> cardArray = new();
+            List<Card> cardArray = [];
             foreach (FlatCard card in flats)
             {
                 Card c = new()
@@ -37,7 +37,7 @@ namespace EvolveCDB.Endpoints.Extensions
                 cardArray.Add(c);
             }
 
-            return cardArray.ToArray();
+            return [.. cardArray];
         }
 
 

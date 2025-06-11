@@ -43,16 +43,14 @@ namespace EvolveCDB
             });
 
             builder.Services.AddSingleton(factory => {
-                using (var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github"))
+                using var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github");
+                string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
+                if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
                 {
-                    string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
-                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
-                    {
-                        throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
-                    }
-                    
-                    return CardExtensions.MapToCardTypes(flatCards.ToArray());
+                    throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
                 }
+
+                return CardExtensions.MapToCardTypes([.. flatCards]);
             });
 
             builder.Services.AddScoped<CardEndpoints>();
