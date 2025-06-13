@@ -1,6 +1,8 @@
+using DSharpPlus;
 using EvolveCDB.Endpoints;
 using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
+using EvolveCDB.Services;
 using Microsoft.AspNetCore.Routing.Constraints;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -10,10 +12,11 @@ namespace EvolveCDB
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateSlimBuilder(args);
 
+            builder.Configuration.AddEnvironmentVariables();
             builder.Services.Configure<RouteOptions>(options => options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options => 
@@ -71,12 +74,24 @@ namespace EvolveCDB
 
                 return CardExtensions.MapToCardTypes([.. flatCards]);
             });
-
+            builder.Services.AddSingleton<CardService>();
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
-            
+            var cf = builder.Configuration.GetSection("BOT_TOKEN");
 
+            builder.Services.AddHostedService<DiscordService>()
+                .AddDiscordClient(new DiscordConfiguration()
+                {
+                    Token = cf.Value,
+                    TokenType = TokenType.Bot,
+                    Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
+                    MinimumLogLevel = LogLevel.Debug
+                });
+                
             var app = builder.Build();
+
+            //DiscordService discordService = new(app.Services.GetRequiredService<IOptions<RootConfig>>());
+            //await discordService.Init();
 
             app.MapSwagger("/{documentName}/swagger.json");
             app.UseSwaggerUI(options => {
