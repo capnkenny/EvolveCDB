@@ -1,7 +1,9 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Enums;
+using DSharpPlus.Interactivity.Extensions;
 using EvolveCDB.Commands;
-using System.Diagnostics;
 
 namespace EvolveCDB.Services
 {
@@ -23,15 +25,18 @@ namespace EvolveCDB.Services
             
             _client = client;
 
+            _client.UseInteractivity(new InteractivityConfiguration()
+            {
+                PollBehaviour = PollBehaviour.KeepEmojis,
+            });
+
             CommandsNextExtension commands = _client.UseCommandsNext(new CommandsNextConfiguration()
             {
                 Services = provider,
                 StringPrefixes = ["!"]
             });
 
-            commands.RegisterCommands<PingCommand>();
-            commands.RegisterCommands<CardCommands>();
-            
+            commands.RegisterCommands<CardCommands>();            
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
