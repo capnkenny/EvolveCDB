@@ -10,6 +10,7 @@
     <DockerfileContext>.</DockerfileContext>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <ServerGarbageCollection>false</ServerGarbageCollection>
+    <TrimMode>partial</TrimMode>
   </PropertyGroup>
 
   <ItemGroup>
