@@ -2,14 +2,9 @@
 
 namespace EvolveCDB.Services
 {
-    public class CardService
+    public class CardService(Card[] cards)
     {
-        private readonly Card[] _cards;
-
-        public CardService(Card[] cards)
-        {
-            _cards = cards;
-        }
+        private readonly Card[] _cards = cards;
 
         public Card? GetSingleCardById(string cardId) => _cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
 
