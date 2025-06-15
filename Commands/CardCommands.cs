@@ -16,7 +16,10 @@ namespace EvolveCDB.Commands
             var card = cardService.GetSingleCardById(cardId);
             if (card == null)
             {
-                await context.RespondAsync($"Sorry! No card with the Card ID '{cardId}' was found");
+                await new DiscordMessageBuilder()
+                    .WithContent($"Sorry! No card with the Card ID '{cardId}' was found")
+                    .WithReply(context.Message.Id)
+                    .SendAsync(context.Channel);
             }
 
             var embed = GenerateCardEmbed(card!, context);
@@ -40,6 +43,40 @@ namespace EvolveCDB.Commands
             }
         }
 
+        [Command("card")]
+        public async Task GetCardByName(CommandContext context, params string[] text)
+        {
+            string cardNameToSearch = string.Join(" ", text);
+            var cardService = context.Services.GetRequiredService<CardService>();
+            var card = cardService.SearchForCardName(cardNameToSearch);
+            if (card == null)
+            {
+                await new DiscordMessageBuilder()
+                       .WithContent($"Sorry! No card with '{cardNameToSearch}' was found.")
+                       .WithReply(context.Message.Id)
+                       .SendAsync(context.Channel);
+            }
+
+            var embed = GenerateCardEmbed(card!, context);
+            DiscordMessageBuilder message = new();
+            var msg = await message.WithReply(context.Message.Id)
+                .WithEmbed(embed)
+                .SendAsync(context.Channel);
+
+            if (card!.AlternateDetails is not null)
+            {
+                var repeatEmoji = DiscordEmoji.FromName(context.Client, ":repeat:");
+                var result = await msg.WaitForReactionAsync(context.User, repeatEmoji);
+
+                if (!result.TimedOut)
+                {
+                    await new DiscordMessageBuilder()
+                        .WithEmbed(GenerateAlternateCardEmbed(card!))
+                        .WithReply(result.Result.Message.Id)
+                        .SendAsync(context.Channel);
+                }
+            }
+        }
 
         [Command("deckCode")]
         public async Task GetDeckByCode(CommandContext context, string deckCode)
@@ -48,22 +85,23 @@ namespace EvolveCDB.Commands
             DiscordMessageBuilder message = new();
             try
             {
-                var deckList = await deckService.GetTextualDeckFromCode(deckCode, true);
+                var deckList = await deckService.GetTextualDeckFromCode(deckCode);
                 var embed = GenerateDeckEmbed(deckList!);
 
-                var _ = await message.WithReply(context.Message.Id)
+                await new DiscordMessageBuilder()
+                    .WithReply(context.Message.Id)
                     .WithEmbed(embed)
                     .SendAsync(context.Channel);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                var _ = await message.WithReply(context.Message.Id)
+                await new DiscordMessageBuilder()
+                    .WithReply(context.Message.Id)
                     .WithContent("Sorry, I wasn't able to look up that deck code for some reason... please try again later.")
                     .SendAsync(context.Channel);
             }
         }
-
 
         internal DiscordEmbed GenerateCardEmbed(Card card, CommandContext context)
         {

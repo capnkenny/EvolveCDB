@@ -40,5 +40,26 @@ namespace EvolveCDB.Services
 
             return [.. cardList];
         }
+    
+        public Card? SearchForCardName(string nameSearch)
+        {
+            Card? cardResult = null;
+
+            var cardNameArray = _cards.Select(card => card.Name).ToArray();
+            Fastenshtein.Levenshtein lev = new(nameSearch);
+
+            int lowestDistance = 100;
+            foreach (var item in cardNameArray)
+            {
+                int levenshteinDistance = lev.DistanceFrom(item);
+                if (levenshteinDistance < lowestDistance)
+                {
+                    cardResult = _cards.First(card => card.Name.Equals(item));
+                    lowestDistance = levenshteinDistance;
+                }
+            }
+
+            return cardResult;
+        }
     }
 }
