@@ -2,6 +2,7 @@
 {
     public class DeckList
     {
+        public string? Name { get; set; }
         public string? DeckCode { get; set; }
 
         /// <summary>

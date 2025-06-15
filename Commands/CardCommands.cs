@@ -40,6 +40,31 @@ namespace EvolveCDB.Commands
             }
         }
 
+
+        [Command("deckCode")]
+        public async Task GetDeckByCode(CommandContext context, string deckCode)
+        {
+            var deckService = context.Services.GetRequiredService<DeckService>();
+            DiscordMessageBuilder message = new();
+            try
+            {
+                var deckList = await deckService.GetTextualDeckFromCode(deckCode, true);
+                var embed = GenerateDeckEmbed(deckList!);
+
+                var _ = await message.WithReply(context.Message.Id)
+                    .WithEmbed(embed)
+                    .SendAsync(context.Channel);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                var _ = await message.WithReply(context.Message.Id)
+                    .WithContent("Sorry, I wasn't able to look up that deck code for some reason... please try again later.")
+                    .SendAsync(context.Channel);
+            }
+        }
+
+
         internal DiscordEmbed GenerateCardEmbed(Card card, CommandContext context)
         {
             var embed = new DiscordEmbedBuilder
@@ -73,6 +98,25 @@ namespace EvolveCDB.Commands
             return embed;
         }
 
+        internal DiscordEmbed GenerateDeckEmbed(List<string> textDeck)
+        {
+            var embed = new DiscordEmbedBuilder
+            {
+                Title = $"{textDeck[0]}",
+                Url = $"https://decklog-en.bushiroad.com/view/{textDeck[1]}",
+                Color = GetColorBasedOnClassType(textDeck[2])
+            };
+
+            embed.AddField("Leader Card", textDeck[3]);
+            embed.AddField("Main Deck", textDeck[4]);
+            embed.AddField("Evolve Deck", textDeck[5]);
+
+            embed.WithFooter($"Deck Code: {textDeck[1]}");
+
+            return embed;
+        }
+
+
         internal DiscordEmbed GenerateAlternateCardEmbed(Card card)
         {
             var embed = new DiscordEmbedBuilder
@@ -98,7 +142,6 @@ namespace EvolveCDB.Commands
 
             return embed;
         }
-
 
         internal DiscordColor GetColorBasedOnClassType(string affiliation) => affiliation.ToLowerInvariant() switch
         {

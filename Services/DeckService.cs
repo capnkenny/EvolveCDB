@@ -68,6 +68,7 @@ namespace EvolveCDB.Services
 
                 return new DeckList
                 {
+                    Name = naviDeck.Title,
                     DeckCode = code,
                     LeaderCard = leaderCard,
                     MainCards = mainCardResults,
@@ -101,6 +102,38 @@ namespace EvolveCDB.Services
                         Copies = list.EvolveCards.Count(c => c.CardId == card.CardId),
                     };
                 })],
+            };
+        }
+
+        public async Task<List<string>?> GetTextualDeckFromCode(string code)
+        {
+            DeckList? list = await GetDeckFromCode(code) ?? throw new ArgumentException("Could not get the deck from the deck code provided");
+            var distinctMain = list.MainCards.DistinctBy(card => card.CardId);
+            var textMain = distinctMain.Select(card =>
+            {
+                return new TextualCard 
+                { 
+                    CardText = $"{card.Name} ({card.CardId}) x{list.MainCards.Count(c => c.CardId == card.CardId)}"
+                };
+            });
+
+            var distinctEvolve = list.EvolveCards.DistinctBy(card => card.CardId);
+            var textEvolve = distinctEvolve.Select(card =>
+            {
+                return new TextualCard
+                {
+                    CardText = $"{card.Name} ({card.CardId}) x{list.EvolveCards.Count(c => c.CardId == card.CardId)}"
+                };
+            });
+
+            return new()
+            {
+                $"{list.Name}",
+                $"{list.DeckCode}",
+                $"{list.LeaderCard.ClassType}",
+                $"{list.LeaderCard.Name} ({list.LeaderCard.CardId})",
+                string.Join("\n",[.. textMain.Select(c => c.CardText)]),
+                string.Join("\n",[.. textEvolve.Select(c => c.CardText)]),
             };
         }
     }

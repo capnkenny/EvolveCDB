@@ -75,6 +75,7 @@ namespace EvolveCDB
                 return CardExtensions.MapToCardTypes([.. flatCards]);
             });
             builder.Services.AddSingleton<CardService>();
+            builder.Services.AddSingleton<DeckService>();
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
             var cf = builder.Configuration.GetSection("BOT_TOKEN");
