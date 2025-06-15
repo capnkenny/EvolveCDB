@@ -6,6 +6,7 @@
         public required string CardSet { get; set; }
         public required string CardNumber { get; set; }
         public required string Kind { get; set; }
+        public required string Trait { get; set; }
         public required string ClassType { get; set; }
         public required string Name { get; set; }
         public required string ImgUrl { get; set; }

@@ -16,6 +16,9 @@ namespace EvolveCDB.Model
         [JsonPropertyName("kind")]
         public string Kind { get; set; }
 
+        [JsonPropertyName("trait")]
+        public string Trait { get; set; }
+
         [JsonPropertyName("class")]
         public string ClassType { get; set; }
 
@@ -57,5 +60,8 @@ namespace EvolveCDB.Model
 
         [JsonPropertyName("altDescription")]
         public string AltDescription { get; set; }
+
+        [JsonPropertyName("altTrait")]
+        public string AltTrait { get; set; }
     }
 }

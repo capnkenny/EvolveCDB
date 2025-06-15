@@ -18,6 +18,7 @@ namespace EvolveCDB.Endpoints.Extensions
                     Attack = card.Atk,
                     Defense = card.Def,
                     Description = card.Description,
+                    Trait = card.Trait,
                     Name = card.Name,
                     ClassType = card.ClassType,
                     Kind = PascalCaseRegex().Replace(card.Kind, " / "),
@@ -30,7 +31,8 @@ namespace EvolveCDB.Endpoints.Extensions
                         Description = card.AltDescription,
                         Name = card.AltName,
                         Attack = card.AltAtk,
-                        Defense = card.AltDef
+                        Defense = card.AltDef,
+                        Trait = card.AltTrait,
                     }
                 };
 
