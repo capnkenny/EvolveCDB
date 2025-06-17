@@ -1,4 +1,4 @@
-﻿using EvolveCDB.Model;
+using EvolveCDB.Model;
 using EvolveCDB.Services;
 
 namespace EvolveCDB.Endpoints
@@ -8,7 +8,7 @@ namespace EvolveCDB.Endpoints
         public async Task<AbbreviatedDeckList?> GetShortenedDeckListFromCode(string code) => await _service.GetShortenedDeckListFromCode(code);
 
 
-        public async Task<DeckList?> GetDeckFromCode(string code) => await GetDeckFromCode(code);
+        public async Task<DeckList?> GetDeckFromCode(string code) => await _service.GetDeckFromCode(code);
     }
 
 
