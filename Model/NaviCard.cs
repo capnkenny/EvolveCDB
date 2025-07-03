@@ -13,7 +13,7 @@ namespace EvolveCDB.Model
         [JsonPropertyName("slot")]
         public int Slot { get; set; }
 
-        [JsonPropertyName("max")]
-        public int Limit { get; set; }
+        //[JsonPropertyName("max")]
+        //public int Limit { get; set; }
     }
 }
