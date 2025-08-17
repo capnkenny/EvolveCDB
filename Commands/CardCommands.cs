@@ -114,7 +114,8 @@ namespace EvolveCDB.Commands
 
             embed.AddField("Affiliation", card!.ClassType);
             embed.AddField("Card Type", card!.Kind);
-            if (!card!.Kind.Contains("Evolved", StringComparison.InvariantCultureIgnoreCase))
+            if (!card!.Kind.Contains("Evolved", StringComparison.InvariantCultureIgnoreCase)
+                && !card!.Kind.Contains("Leader", StringComparison.InvariantCultureIgnoreCase))
             {
                 embed.AddField("Cost", card!.Cost.ToString());
             }
@@ -124,7 +125,10 @@ namespace EvolveCDB.Commands
                 embed.AddField("Attack", card!.Attack.ToString(), true);
                 embed.AddField("Defense", card!.Defense.ToString(), true);
             }
-            embed.AddField("Detail", card!.Description);
+            if (!string.IsNullOrWhiteSpace(card!.Description))
+            {
+                embed.AddField("Detail", card!.Description);
+            }
             embed.WithImageUrl(card!.ImgUrl);
 
             DiscordEmoji emoji = DiscordEmoji.FromName(context.Client, ":repeat:");
