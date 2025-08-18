@@ -4,6 +4,7 @@ using EvolveCDB.Endpoints.Extensions;
 using EvolveCDB.Model;
 using EvolveCDB.Services;
 using Microsoft.AspNetCore.Routing.Constraints;
+using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -58,26 +59,42 @@ namespace EvolveCDB
                 conf.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
                 conf.DefaultRequestHeaders.Add("TE", "trailers");
             });
+            
+            builder.Services.AddMemoryCache();
 
             builder.Services.AddHttpClient("github", conf =>
             {
                 conf.BaseAddress = new("https://raw.githubusercontent.com");
             });
 
-            builder.Services.AddSingleton(factory => {
-                using var githubClient = factory.GetRequiredService<IHttpClientFactory>()!.CreateClient("github");
-                string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
-                if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
+            builder.Services.AddOptions<Card[]>().Configure<IHttpClientFactory, IMemoryCache>((cardArray, factory, cache) => 
+            {
+                //Add caching later to prevent constant grabbie hands
+                if (cache.TryGetValue("cardDb", out Card[]? array))
                 {
-                    throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
+                    cardArray = array!;
                 }
+                else
+                { 
+                    using var githubClient = factory!.CreateClient("github");
+                    string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
+                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
+                    {
+                        throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
+                    }
 
-                return CardExtensions.MapToCardTypes([.. flatCards]);
+                    var newArray = CardExtensions.MapToCardTypes([.. flatCards]);
+                    //put it in cache so we don't cook spam
+                    cache.Set("cardDb", newArray, TimeSpan.FromMinutes(5));
+                    cardArray = newArray;
+                }
             });
+
             builder.Services.AddSingleton<CardService>();
             builder.Services.AddSingleton<DeckService>();
             builder.Services.AddScoped<CardEndpoints>();
             builder.Services.AddScoped<DeckEndpoints>();
+            builder.Services.AddScoped<ImageEndpoints>();
             var cf = builder.Configuration.GetSection("BOT_TOKEN");
 
             builder.Services.AddHostedService<DiscordService>()
@@ -90,9 +107,6 @@ namespace EvolveCDB
                 });
                 
             var app = builder.Build();
-
-            //DiscordService discordService = new(app.Services.GetRequiredService<IOptions<RootConfig>>());
-            //await discordService.Init();
 
             app.MapSwagger("/{documentName}/swagger.json");
             app.UseSwaggerUI(options => {
@@ -107,6 +121,9 @@ namespace EvolveCDB
 
             app.MapGroup("/api/deck")
                 .MapDeckEndpoints();
+
+            app.MapGroup("/img")
+                .MapImageEndpoints();
 
             app.Run();
         }

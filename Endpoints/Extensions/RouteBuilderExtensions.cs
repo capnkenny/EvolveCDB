@@ -76,5 +76,22 @@ namespace EvolveCDB.Endpoints.Extensions
 
             return groupBuilder;
         }
+
+        public static RouteGroupBuilder MapImageEndpoints(this RouteGroupBuilder groupBuilder)
+        {
+            //Route building
+            groupBuilder.MapGet("{cardId}", async (ImageEndpoints endpointInstance, string cardId) => TypedResults.Ok(await endpointInstance.GetImageByCardId(cardId)))
+                .WithName("Get Card Image")
+                .WithOpenApi(generatedOperation =>
+                {
+                    OpenApiParameter parameter = generatedOperation.Parameters[0];
+                    parameter.Description = "The Card ID of the card.";
+                    generatedOperation.Summary = "Gets the image for a specific card given the provided card ID. .";
+                    return generatedOperation;
+                });
+
+            return groupBuilder;
+        }
+
     }
 }
