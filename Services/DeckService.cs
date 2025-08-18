@@ -4,9 +4,9 @@ using System.Text.Json;
 
 namespace EvolveCDB.Services
 {
-    public class DeckService(IOptionsMonitor<Card[]> cards, IHttpClientFactory factory)
+    public class DeckService(IOptionsMonitor<CardListOptions> cardList, IHttpClientFactory factory)
     {
-        private readonly Card[] _cards = cards.CurrentValue;
+        private readonly IOptionsMonitor<CardListOptions> _monitor;
         private const int ShadowverseEvolveGameId = 6;
         private readonly IHttpClientFactory _httpClientFactory = factory;
 
@@ -19,7 +19,7 @@ namespace EvolveCDB.Services
 
             string responseJson = await response.Content.ReadAsStringAsync();
 
-            if (JsonSerializer.Deserialize(responseJson, typeof(NaviDeckList), SourceGenerationContext.Default) is NaviDeckList naviDeck)
+            if (JsonSerializer.Deserialize(responseJson, typeof(NaviDeckList)) is NaviDeckList naviDeck)
             {
                 if (naviDeck.GameId != ShadowverseEvolveGameId)
                 {
@@ -32,7 +32,7 @@ namespace EvolveCDB.Services
 
                 foreach (var lc in naviDeck.LeaderDeck)
                 {
-                    var matching = _cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matching = _monitor.CurrentValue.Cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matching.Any())
                     {
                         leaderCard = matching.First();
@@ -41,7 +41,7 @@ namespace EvolveCDB.Services
 
                 foreach (var mc in naviDeck.MainDeck)
                 {
-                    var matchingCard = _cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matchingCard = _monitor.CurrentValue.Cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matchingCard is not null)
                     {
                         for (int i = 0; i < mc.Num; i++)
@@ -55,7 +55,7 @@ namespace EvolveCDB.Services
 
                 foreach (var ec in naviDeck.EvolveDeck)
                 {
-                    var matchingEvolveCard = _cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matchingEvolveCard = _monitor.CurrentValue.Cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matchingEvolveCard is not null)
                     {
                         for (int i = 0; i < ec.Num; i++)

@@ -108,7 +108,7 @@ namespace EvolveCDB.Commands
             var embed = new DiscordEmbedBuilder
             {
                 Title = card!.Name,
-                Url = $"https://en.shadowverse-evolve.com/cards/?cardno={card!.CardId}&view=image",
+                Url = $"https://evolvecdb.org/img/{card!.CardId}",
                 Color = GetColorBasedOnClassType(card!.ClassType)
             };
 

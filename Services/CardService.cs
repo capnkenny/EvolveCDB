@@ -1,17 +1,18 @@
 ﻿using EvolveCDB.Model;
 using Microsoft.Extensions.Options;
+using System.Threading;
 
 namespace EvolveCDB.Services
 {
-    public class CardService(IOptionsMonitor<Card[]> cardsMonitor)
+    public class CardService(IOptionsMonitor<CardListOptions> cardList)
     {
-        private readonly Card[] _cards = cardsMonitor.CurrentValue;
+        private IOptionsMonitor<CardListOptions> _optionsMonitor = cardList;
 
-        public Card? GetSingleCardById(string cardId) => _cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
+        public Card? GetSingleCardById(string cardId) => _optionsMonitor.CurrentValue.Cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
 
         public Card[] GetAllCards(string? cardIdContains, string? nameLike, string? kind, string? classType, int? cost)
         {
-            IEnumerable<Card> cardList = _cards.ToList();
+            IEnumerable<Card> cardList = _optionsMonitor.CurrentValue.Cards.ToList();
 
             if (cardIdContains is not null)
             {
@@ -46,7 +47,7 @@ namespace EvolveCDB.Services
         {
             Card? cardResult = null;
 
-            var cardNameArray = _cards.Select(card => card.Name).ToArray();
+            var cardNameArray = _optionsMonitor.CurrentValue.Cards.Select(card => card.Name).ToArray();
             Fastenshtein.Levenshtein lev = new(nameSearch);
 
             int lowestDistance = 100;
@@ -55,7 +56,7 @@ namespace EvolveCDB.Services
                 int levenshteinDistance = lev.DistanceFrom(item);
                 if (levenshteinDistance < lowestDistance)
                 {
-                    cardResult = _cards.First(card => card.Name.Equals(item));
+                    cardResult = _optionsMonitor.CurrentValue.Cards.First(card => card.Name.Equals(item));
                     lowestDistance = levenshteinDistance;
                 }
             }

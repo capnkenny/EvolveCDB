@@ -5,6 +5,7 @@ using EvolveCDB.Model;
 using EvolveCDB.Services;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.Caching.Memory;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -15,14 +16,18 @@ namespace EvolveCDB
     {
         private static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateSlimBuilder(args);
+            var builder = WebApplication.CreateBuilder(args);
 
             builder.Configuration.AddEnvironmentVariables();
             builder.Services.Configure<RouteOptions>(options => options.SetParameterPolicy<RegexInlineRouteConstraint>("regex"));
+            builder.Services.AddControllers(options =>
+            {
+                options.RespectBrowserAcceptHeader = true;
+            });
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(options => 
-            {                
-                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
                 {
                     Version = "v1",
                     Title = "EvolveCDB",
@@ -38,7 +43,6 @@ namespace EvolveCDB
 
             builder.Services.ConfigureHttpJsonOptions(options =>
             {
-                options.SerializerOptions.TypeInfoResolverChain.Insert(0, SourceGenerationContext.Default);
                 options.SerializerOptions.PropertyNameCaseInsensitive = true;
             });
 
@@ -67,18 +71,22 @@ namespace EvolveCDB
                 conf.BaseAddress = new("https://raw.githubusercontent.com");
             });
 
-            builder.Services.AddOptions<Card[]>().Configure<IHttpClientFactory, IMemoryCache>((cardArray, factory, cache) => 
+
+            builder.Services.AddOptions<CardListOptions>()
+                .Configure<IHttpClientFactory, IMemoryCache>((cardArray, factory, cache) =>
             {
+                cardArray.Cards = [];
+
                 //Add caching later to prevent constant grabbie hands
                 if (cache.TryGetValue("cardDb", out Card[]? array))
                 {
-                    cardArray = array!;
+                    cardArray.Cards = array!;
                 }
                 else
-                { 
+                {
                     using var githubClient = factory!.CreateClient("github");
                     string? json = githubClient.GetStringAsync("capnkenny/SVEDB_Extract/refs/heads/main/cards.json").GetAwaiter().GetResult();
-                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>), SourceGenerationContext.Default) is not List<FlatCard> flatCards)
+                    if (JsonSerializer.Deserialize(json, typeof(List<FlatCard>)) is not List<FlatCard> flatCards)
                     {
                         throw new ApplicationException("Could not properly parse or convert cards.json to card DB.");
                     }
@@ -86,7 +94,7 @@ namespace EvolveCDB
                     var newArray = CardExtensions.MapToCardTypes([.. flatCards]);
                     //put it in cache so we don't cook spam
                     cache.Set("cardDb", newArray, TimeSpan.FromMinutes(5));
-                    cardArray = newArray;
+                    cardArray.Cards = newArray;
                 }
             });
 
@@ -96,6 +104,8 @@ namespace EvolveCDB
             builder.Services.AddScoped<DeckEndpoints>();
             builder.Services.AddScoped<ImageEndpoints>();
             var cf = builder.Configuration.GetSection("BOT_TOKEN");
+
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             builder.Services.AddHostedService<DiscordService>()
                 .AddDiscordClient(new DiscordConfiguration()
@@ -109,7 +119,8 @@ namespace EvolveCDB
             var app = builder.Build();
 
             app.MapSwagger("/{documentName}/swagger.json");
-            app.UseSwaggerUI(options => {
+            app.UseSwaggerUI(options =>
+            {
                 //Temporary until UI is built.
                 options.SwaggerEndpoint("/v1/swagger.json", "v1");
                 options.RoutePrefix = string.Empty;
@@ -128,21 +139,4 @@ namespace EvolveCDB
             app.Run();
         }
     }
-}
-
-[JsonSourceGenerationOptions(WriteIndented = true, PropertyNameCaseInsensitive = true)]
-[JsonSerializable(typeof(FlatCard))]
-[JsonSerializable(typeof(List<FlatCard>))]
-[JsonSerializable(typeof(DeckList))]
-[JsonSerializable(typeof(List<AbbreviatedCard>))]
-[JsonSerializable(typeof(AbbreviatedCard))]
-[JsonSerializable(typeof(AbbreviatedDeckList))]
-[JsonSerializable(typeof(AlternateSide))]
-[JsonSerializable(typeof(Card))]
-[JsonSerializable(typeof(Card[]))]
-[JsonSerializable(typeof(NaviDeckList))]
-[JsonSerializable(typeof(NaviCard))]
-[JsonSerializable(typeof(NaviCard[]))]
-internal partial class SourceGenerationContext : JsonSerializerContext
-{
 }

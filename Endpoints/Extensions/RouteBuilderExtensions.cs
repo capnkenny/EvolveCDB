@@ -1,5 +1,4 @@
-﻿using EvolveCDB.Model;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
 namespace EvolveCDB.Endpoints.Extensions
@@ -80,13 +79,17 @@ namespace EvolveCDB.Endpoints.Extensions
         public static RouteGroupBuilder MapImageEndpoints(this RouteGroupBuilder groupBuilder)
         {
             //Route building
-            groupBuilder.MapGet("{cardId}", async (ImageEndpoints endpointInstance, string cardId) => TypedResults.Ok(await endpointInstance.GetImageByCardId(cardId)))
+            groupBuilder.MapGet("{cardId}", (ImageEndpoints endpointInstance, HttpContext context, string cardId) => 
+            {
+                var result = Results.Stream(endpointInstance.GetImageByCardId(cardId, context), "image/png");
+                return result;
+            })
                 .WithName("Get Card Image")
                 .WithOpenApi(generatedOperation =>
                 {
                     OpenApiParameter parameter = generatedOperation.Parameters[0];
                     parameter.Description = "The Card ID of the card.";
-                    generatedOperation.Summary = "Gets the image for a specific card given the provided card ID. .";
+                    generatedOperation.Summary = "Gets the image for a specific card given the provided card ID.";
                     return generatedOperation;
                 });
 
