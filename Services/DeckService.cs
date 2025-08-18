@@ -6,7 +6,7 @@ namespace EvolveCDB.Services
 {
     public class DeckService(IOptionsMonitor<CardListOptions> cardList, IHttpClientFactory factory)
     {
-        private readonly IOptionsMonitor<CardListOptions> _monitor;
+        private readonly IOptionsMonitor<CardListOptions> _monitor = cardList;
         private const int ShadowverseEvolveGameId = 6;
         private readonly IHttpClientFactory _httpClientFactory = factory;
 
@@ -29,10 +29,11 @@ namespace EvolveCDB.Services
                 Card leaderCard = null!;
                 List<Card> mainCardResults = [];
                 List<Card> evolveCardResults = [];
+                var cards = _monitor.CurrentValue.Cards;
 
                 foreach (var lc in naviDeck.LeaderDeck)
                 {
-                    var matching = _monitor.CurrentValue.Cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matching = cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matching.Any())
                     {
                         leaderCard = matching.First();
@@ -41,7 +42,7 @@ namespace EvolveCDB.Services
 
                 foreach (var mc in naviDeck.MainDeck)
                 {
-                    var matchingCard = _monitor.CurrentValue.Cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matchingCard = cards.FirstOrDefault(c => c.CardId.Equals(mc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matchingCard is not null)
                     {
                         for (int i = 0; i < mc.Num; i++)
@@ -55,7 +56,7 @@ namespace EvolveCDB.Services
 
                 foreach (var ec in naviDeck.EvolveDeck)
                 {
-                    var matchingEvolveCard = _monitor.CurrentValue.Cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                    var matchingEvolveCard = cards.FirstOrDefault(c => c.CardId.Equals(ec.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matchingEvolveCard is not null)
                     {
                         for (int i = 0; i < ec.Num; i++)
