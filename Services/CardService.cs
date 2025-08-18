@@ -1,10 +1,11 @@
 ﻿using EvolveCDB.Model;
+using Microsoft.Extensions.Options;
 
 namespace EvolveCDB.Services
 {
-    public class CardService(Card[] cards)
+    public class CardService(IOptionsMonitor<Card[]> cardsMonitor)
     {
-        private readonly Card[] _cards = cards;
+        private readonly Card[] _cards = cardsMonitor.CurrentValue;
 
         public Card? GetSingleCardById(string cardId) => _cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
 

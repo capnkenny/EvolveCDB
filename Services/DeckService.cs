@@ -1,11 +1,12 @@
 ﻿using EvolveCDB.Model;
+using Microsoft.Extensions.Options;
 using System.Text.Json;
 
 namespace EvolveCDB.Services
 {
-    public class DeckService(Card[] cards, IHttpClientFactory factory)
+    public class DeckService(IOptionsMonitor<Card[]> cards, IHttpClientFactory factory)
     {
-        private readonly Card[] _cards = cards;
+        private readonly Card[] _cards = cards.CurrentValue;
         private const int ShadowverseEvolveGameId = 6;
         private readonly IHttpClientFactory _httpClientFactory = factory;
 
