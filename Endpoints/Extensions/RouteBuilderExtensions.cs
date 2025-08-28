@@ -91,12 +91,19 @@ namespace EvolveCDB.Endpoints.Extensions
                     Console.Error.WriteLine(ex.Message);
                     try
                     {
-                        var result = Results.Stream(File.OpenRead("NotFound1.png"), "image/png");
+                        var fs = File.OpenRead("NotFound1.png");
+                        var ms = new MemoryStream();
+                    
+                        fs.CopyTo(ms);
+                        fs.Flush();
+                        ms.Seek(0, SeekOrigin.Begin);
+                        fs.Dispose();
+                        var result = Results.Stream(ms, "image/png");
                         return result;
                     }
                     catch (Exception e)
                     {
-                        return Results.NotFound(e);
+                        return Results.NotFound(e.Message);
                     }
                 }
             })
