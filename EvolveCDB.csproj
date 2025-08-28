@@ -28,4 +28,10 @@
     <PackageReference Include="System.Text.Encoding.CodePages" Version="8.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+  <None Update="NotFound1.png">
+    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+  </None>
+  </ItemGroup>  
+
 </Project>
