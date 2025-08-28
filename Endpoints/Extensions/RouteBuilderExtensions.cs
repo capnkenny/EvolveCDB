@@ -81,8 +81,24 @@ namespace EvolveCDB.Endpoints.Extensions
             //Route building
             groupBuilder.MapGet("{cardId}", (ImageEndpoints endpointInstance, HttpContext context, string cardId) => 
             {
-                var result = Results.Stream(endpointInstance.GetImageByCardId(cardId, context), "image/png");
-                return result;
+                try
+                {
+                    var result = Results.Stream(endpointInstance.GetImageByCardId(cardId, context), "image/png");
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex.Message);
+                    try
+                    {
+                        var result = Results.Stream(File.OpenRead("NotFound1.png"), "image/png");
+                        return result;
+                    }
+                    catch (Exception e)
+                    {
+                        return Results.NotFound(e);
+                    }
+                }
             })
                 .WithName("Get Card Image")
                 .WithOpenApi(generatedOperation =>
