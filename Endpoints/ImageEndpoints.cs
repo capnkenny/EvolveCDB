@@ -64,7 +64,7 @@ namespace EvolveCDB.Endpoints
             var request = new GetObjectRequest
             {
                 BucketName = _bucketName,
-                Key = $"{cardCaps}.png"
+                Key = $"{cardId.Replace(".png","")}.png"
             };
 
             var response = _s3.GetObjectAsync(request).ConfigureAwait(false).GetAwaiter().GetResult();
