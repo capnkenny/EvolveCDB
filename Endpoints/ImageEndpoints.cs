@@ -33,8 +33,7 @@ namespace EvolveCDB.Endpoints
         {
             List<string> listOfKeys = [];
             string contToken = null;
-            string cardIdWOExt = cardId.ToLowerInvariant().Replace(".png","");
-            string cardCaps = cardIdWOExt.ToUpperInvariant();
+            string cardIdWOExt = cardId.Replace(".PNG", ".png").Replace(".png", "");
             do
             {
                 var listRequest = new ListObjectsV2Request
@@ -47,7 +46,7 @@ namespace EvolveCDB.Endpoints
 
                 if (listResponse is not null && listResponse.S3Objects is null)
                 {
-                    throw new FileNotFoundException($"Image for card {cardCaps} not found.");
+                    throw new FileNotFoundException($"Image for card {cardIdWOExt} not found.");
                 }
 
                 listOfKeys.AddRange([.. listResponse!.S3Objects!.Select(obj => obj.Key.Replace(".png", ""))]);
@@ -56,21 +55,21 @@ namespace EvolveCDB.Endpoints
             }
             while (contToken is not null);
 
-            if (!listOfKeys.Contains(cardCaps))
+            if (!listOfKeys.Contains(cardIdWOExt))
             {
-                throw new FileNotFoundException($"Image for card {cardCaps} not found.");
+                throw new FileNotFoundException($"Image for card {cardIdWOExt} not found.");
             }
 
             var request = new GetObjectRequest
             {
                 BucketName = _bucketName,
-                Key = $"{cardId.Replace(".png","")}.png"
+                Key = $"{cardIdWOExt}.png"
             };
 
             var response = _s3.GetObjectAsync(request).ConfigureAwait(false).GetAwaiter().GetResult();
             if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
             {
-                throw new FileNotFoundException($"Could not retrieve image for card {cardCaps}.");
+                throw new FileNotFoundException($"Could not retrieve image for card {cardIdWOExt}.");
             }
 
             MemoryStream memStream = new();

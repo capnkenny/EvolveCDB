@@ -8,7 +8,7 @@ namespace EvolveCDB.Services
     {
         private IOptionsMonitor<CardListOptions> _optionsMonitor = cardList;
 
-        public Card? GetSingleCardById(string cardId) => _optionsMonitor.CurrentValue.Cards.FirstOrDefault(card => card.CardId.Equals(cardId.ToLowerInvariant().Replace(".png", ""), StringComparison.InvariantCultureIgnoreCase));
+        public Card? GetSingleCardById(string cardId) => _optionsMonitor.CurrentValue.Cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
 
         public Card[] GetAllCards(string? cardIdContains, string? nameLike, string? kind, string? classType, int? cost)
         {
