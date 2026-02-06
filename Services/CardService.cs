@@ -1,11 +1,18 @@
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
 using EvolveCDB.Model;
 using Microsoft.Extensions.Options;
-using System.Threading;
 
 namespace EvolveCDB.Services
 {
     public class CardService(IOptionsMonitor<CardListOptions> cardList)
     {
+        private string _s3_endpoint = Environment.GetEnvironmentVariable("S3_ENDPOINT") ?? string.Empty;
+        private string _s3_access_key = Environment.GetEnvironmentVariable("S3_ACCESS") ?? string.Empty;
+        private string _s3_secret_key = Environment.GetEnvironmentVariable("S3_SECRET") ?? string.Empty;
+        private AmazonS3Client? _s3;
+        private const string _bucketName = "evolvecdb";
         private IOptionsMonitor<CardListOptions> _optionsMonitor = cardList;
 
         public Card? GetSingleCardById(string cardId) => _optionsMonitor.CurrentValue.Cards.FirstOrDefault(card => card.CardId.Equals(cardId, StringComparison.InvariantCultureIgnoreCase));
@@ -62,6 +69,78 @@ namespace EvolveCDB.Services
             }
 
             return cardResult;
+        }
+    
+        public (Stream, DateTime) GetCardImage(string cardId)
+        {
+            if(_s3 == null)
+            {
+                if (!string.IsNullOrEmpty(_s3_secret_key))
+                {
+                    var creds = new BasicAWSCredentials(_s3_access_key, _s3_secret_key);
+
+                    _s3 = new AmazonS3Client(creds, new AmazonS3Config()
+                    {
+                        ServiceURL = _s3_endpoint,
+                    });
+                }
+                else
+                {
+                    _s3 = new AmazonS3Client(new AmazonS3Config()
+                    {
+                        ServiceURL = _s3_endpoint,
+                    });
+                }
+            }
+
+            List<string> listOfKeys = [];
+            string contToken = string.Empty;
+            string cardIdWOExt = cardId.Replace(".PNG", ".png").Replace(".png", "");
+            do
+            {
+                var listRequest = new ListObjectsV2Request
+                {
+                    BucketName = _bucketName,
+                    ContinuationToken = contToken,
+                };
+
+                var listResponse = _s3!.ListObjectsV2Async(listRequest).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                if (listResponse is not null && listResponse.S3Objects is null)
+                {
+                    throw new FileNotFoundException($"Image for card {cardIdWOExt} not found.");
+                }
+
+                listOfKeys.AddRange([.. listResponse!.S3Objects!.Select(obj => obj.Key.Replace(".png", ""))]);
+
+                contToken = listResponse!.NextContinuationToken;
+            }
+            while (contToken is not null);
+
+            if (!listOfKeys.Contains(cardIdWOExt))
+            {
+                throw new FileNotFoundException($"Image for card {cardIdWOExt} not found.");
+            }
+
+            var request = new GetObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = $"{cardIdWOExt}.png"
+            };
+
+            var response = _s3.GetObjectAsync(request).ConfigureAwait(false).GetAwaiter().GetResult();
+            if (response.HttpStatusCode != System.Net.HttpStatusCode.OK)
+            {
+                throw new FileNotFoundException($"Could not retrieve image for card {cardIdWOExt}.");
+            }
+
+            MemoryStream memStream = new();
+            response.ResponseStream.CopyTo(memStream);
+            memStream.Seek(0, SeekOrigin.Begin);
+
+            var lastModifiedDateTime = response?.LastModified ?? DateTime.UtcNow;
+
+            return (memStream, lastModifiedDateTime);
         }
     }
 }

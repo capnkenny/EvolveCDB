@@ -83,7 +83,8 @@ namespace EvolveCDB.Endpoints.Extensions
             {
                 try
                 {
-                    var result = Results.Stream(endpointInstance.GetImageByCardId(cardId, context), "image/png");
+                    var cardResult = endpointInstance.GetImageByCardId(cardId);
+                    var result = Results.Stream(cardResult.Item1, "image/png", lastModified: cardResult.Item2);
                     return result;
                 }
                 catch (Exception ex)
@@ -98,7 +99,7 @@ namespace EvolveCDB.Endpoints.Extensions
                         fs.Flush();
                         ms.Seek(0, SeekOrigin.Begin);
                         fs.Dispose();
-                        var result = Results.Stream(ms, "image/png");
+                        var result = Results.Stream(ms, "image/png", lastModified: DateTime.UtcNow);
                         return result;
                     }
                     catch (Exception e)
