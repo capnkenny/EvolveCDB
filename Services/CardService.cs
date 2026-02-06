@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace EvolveCDB.Services
 {
-    public class CardService(IOptionsMonitor<CardListOptions> cardList)
+    public class CardService(IOptionsMonitor<CardListOptions> cardList, ILogger<CardService> logger)
     {
         private string _s3_endpoint = Environment.GetEnvironmentVariable("S3_ENDPOINT") ?? string.Empty;
         private string _s3_access_key = Environment.GetEnvironmentVariable("S3_ACCESS") ?? string.Empty;
@@ -75,6 +75,7 @@ namespace EvolveCDB.Services
         {
             if(_s3 == null)
             {
+                logger?.LogDebug("Initializing S3...");
                 if (!string.IsNullOrEmpty(_s3_secret_key))
                 {
                     var creds = new BasicAWSCredentials(_s3_access_key, _s3_secret_key);
@@ -96,6 +97,8 @@ namespace EvolveCDB.Services
             List<string> listOfKeys = [];
             string contToken = string.Empty;
             string cardIdWOExt = cardId.Replace(".PNG", ".png").Replace(".png", "");
+            logger?.LogDebug($"Card ID received: {cardIdWOExt}");
+
             do
             {
                 var listRequest = new ListObjectsV2Request
@@ -134,11 +137,14 @@ namespace EvolveCDB.Services
                 throw new FileNotFoundException($"Could not retrieve image for card {cardIdWOExt}.");
             }
 
+            logger?.LogDebug($"Found card for Id {cardIdWOExt}!");
+
             MemoryStream memStream = new();
             response.ResponseStream.CopyTo(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
 
-            var lastModifiedDateTime = response?.LastModified ?? DateTime.UtcNow;
+            var lastModifiedDateTime = response?.LastModified ?? DateTime.UtcNow;            
+            logger?.LogDebug($"Card last modified: {lastModifiedDateTime}");
 
             return (memStream, lastModifiedDateTime);
         }

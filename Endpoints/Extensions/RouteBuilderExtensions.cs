@@ -79,17 +79,19 @@ namespace EvolveCDB.Endpoints.Extensions
         public static RouteGroupBuilder MapImageEndpoints(this RouteGroupBuilder groupBuilder)
         {
             //Route building
-            groupBuilder.MapGet("{cardId}", (ImageEndpoints endpointInstance, HttpContext context, string cardId) => 
+            groupBuilder.MapGet("{cardId}", (ImageEndpoints endpointInstance, HttpContext context, string cardId, ILogger<ImageEndpoints> logger) => 
             {
                 try
                 {
+                    logger?.LogInformation($"Attempting to get card - {cardId}");
                     var cardResult = endpointInstance.GetImageByCardId(cardId);
                     var result = Results.Stream(cardResult.Item1, "image/png", lastModified: cardResult.Item2);
                     return result;
                 }
                 catch (Exception ex)
                 {
-                    Console.Error.WriteLine(ex.Message);
+                    logger?.LogError(ex, "Failed to get card Image");
+                    // Console.Error.WriteLine(ex.Message);
                     try
                     {
                         var fs = File.OpenRead("NotFound1.png");
@@ -104,6 +106,7 @@ namespace EvolveCDB.Endpoints.Extensions
                     }
                     catch (Exception e)
                     {
+                        logger?.LogError(ex, "Failed to send 404");
                         return Results.NotFound(e.Message);
                     }
                 }
