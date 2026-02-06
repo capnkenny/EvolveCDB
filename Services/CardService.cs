@@ -75,7 +75,7 @@ namespace EvolveCDB.Services
         {
             if(_s3 == null)
             {
-                logger?.LogDebug("Initializing S3...");
+                logger?.LogInformation("Initializing S3...");
                 if (!string.IsNullOrEmpty(_s3_secret_key))
                 {
                     var creds = new BasicAWSCredentials(_s3_access_key, _s3_secret_key);
@@ -97,15 +97,19 @@ namespace EvolveCDB.Services
             List<string> listOfKeys = [];
             string contToken = string.Empty;
             string cardIdWOExt = cardId.Replace(".PNG", ".png").Replace(".png", "");
-            logger?.LogDebug($"Card ID received: {cardIdWOExt}");
+            logger?.LogInformation($"Card ID received: {cardIdWOExt}");
 
             do
             {
                 var listRequest = new ListObjectsV2Request
                 {
                     BucketName = _bucketName,
-                    ContinuationToken = contToken,
                 };
+
+                if(!string.IsNullOrWhiteSpace(contToken))
+                {
+                    listRequest.ContinuationToken = contToken;
+                }
 
                 var listResponse = _s3!.ListObjectsV2Async(listRequest).ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -137,14 +141,14 @@ namespace EvolveCDB.Services
                 throw new FileNotFoundException($"Could not retrieve image for card {cardIdWOExt}.");
             }
 
-            logger?.LogDebug($"Found card for Id {cardIdWOExt}!");
+            logger?.LogInformation($"Found card for Id {cardIdWOExt}!");
 
             MemoryStream memStream = new();
             response.ResponseStream.CopyTo(memStream);
             memStream.Seek(0, SeekOrigin.Begin);
 
             var lastModifiedDateTime = response?.LastModified ?? DateTime.UtcNow;            
-            logger?.LogDebug($"Card last modified: {lastModifiedDateTime}");
+            logger?.LogInformation($"Card last modified: {lastModifiedDateTime}");
 
             return (memStream, lastModifiedDateTime);
         }
