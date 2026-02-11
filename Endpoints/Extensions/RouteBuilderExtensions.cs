@@ -47,7 +47,17 @@ namespace EvolveCDB.Endpoints.Extensions
                         return generatedOperation;
                     });
 
-            groupBuilder.MapGet("searchTokens", (CardEndpoints endpointInstance, [FromQuery(Name = "name")] string name) => TypedResults.Ok(endpointInstance.SearchForTokenByName(name)))
+            groupBuilder.MapGet("searchTokens", (CardEndpoints endpointInstance, [FromQuery(Name = "name")] string name) => {
+                var card = endpointInstance.SearchForTokenByName(name);
+
+                if(card is null)
+                {
+                    return TypedResults.NotFound();
+                }
+
+                return TypedResults.Ok(card);
+                
+                })
                 .WithName("Search for Single Token Card")
                 .WithOpenApi(generatedOperation =>
                 {
