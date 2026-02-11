@@ -78,6 +78,41 @@ namespace EvolveCDB.Commands
             }
         }
 
+        [Command("searchToken")]
+        public async Task GetTokenByName(CommandContext context, params string[] text)
+        {
+            string cardNameToSearch = string.Join(" ", text);
+            var cardService = context.Services.GetRequiredService<CardService>();
+            var card = cardService.SearchForTokenName(cardNameToSearch);
+            if (card == null)
+            {
+                await new DiscordMessageBuilder()
+                       .WithContent($"Sorry! No Token card with '{cardNameToSearch}' was found.")
+                       .WithReply(context.Message.Id)
+                       .SendAsync(context.Channel);
+            }
+
+            var embed = GenerateCardEmbed(card!, context);
+            DiscordMessageBuilder message = new();
+            var msg = await message.WithReply(context.Message.Id)
+                .WithEmbed(embed)
+                .SendAsync(context.Channel);
+
+            if (card!.AlternateDetails is not null)
+            {
+                var repeatEmoji = DiscordEmoji.FromName(context.Client, ":repeat:");
+                var result = await msg.WaitForReactionAsync(context.User, repeatEmoji);
+
+                if (!result.TimedOut)
+                {
+                    await new DiscordMessageBuilder()
+                        .WithEmbed(GenerateAlternateCardEmbed(card!))
+                        .WithReply(result.Result.Message.Id)
+                        .SendAsync(context.Channel);
+                }
+            }
+        }
+
         [Command("deckCode")]
         public async Task GetDeckByCode(CommandContext context, string deckCode)
         {

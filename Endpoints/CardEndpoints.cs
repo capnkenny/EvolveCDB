@@ -14,6 +14,8 @@ namespace EvolveCDB.Endpoints
 
         public Card? GetSingleCardById(string cardId) => _cardService.GetSingleCardById(cardId);
 
+        public Card? SearchForTokenByName(string tokenName) => _cardService.SearchForTokenName(tokenName);
+
         public Card[] GetAllCards(string? cardIdContains, string? nameLike, string? kind, string? classType, int? cost) => 
             _cardService.GetAllCards(cardIdContains, nameLike, kind, classType, cost);
     }

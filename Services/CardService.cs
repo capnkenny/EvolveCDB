@@ -70,6 +70,32 @@ namespace EvolveCDB.Services
 
             return cardResult;
         }
+
+        public Card? SearchForTokenName(string nameToSearch)
+        {
+            Card? cardResult = null;
+
+            var cardNameArray = _optionsMonitor.CurrentValue.Cards.Where(card => card.Kind.Contains("token", StringComparison.InvariantCultureIgnoreCase))
+                .Select(card => card.Name).ToArray();
+
+            if(cardNameArray == null || cardNameArray.Length <= 0)
+                return null;
+                
+            Fastenshtein.Levenshtein lev = new(nameToSearch);
+
+            int lowestDistance = 100;
+            foreach (var item in cardNameArray)
+            {
+                int levenshteinDistance = lev.DistanceFrom(item);
+                if (levenshteinDistance < lowestDistance)
+                {
+                    cardResult = _optionsMonitor.CurrentValue.Cards.First(card => card.Name.Equals(item));
+                    lowestDistance = levenshteinDistance;
+                }
+            }
+
+            return cardResult;
+        }
     
         public (Stream, DateTime) GetCardImage(string cardId)
         {
