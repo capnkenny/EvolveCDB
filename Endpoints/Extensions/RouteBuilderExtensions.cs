@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 
 namespace EvolveCDB.Endpoints.Extensions
@@ -102,23 +102,7 @@ namespace EvolveCDB.Endpoints.Extensions
                 {
                     logger?.LogError(ex, "Failed to get card Image");
                     // Console.Error.WriteLine(ex.Message);
-                    try
-                    {
-                        var fs = File.OpenRead("NotFound1.png");
-                        var ms = new MemoryStream();
-                    
-                        fs.CopyTo(ms);
-                        fs.Flush();
-                        ms.Seek(0, SeekOrigin.Begin);
-                        fs.Dispose();
-                        var result = Results.Stream(ms, "image/png", lastModified: DateTime.UtcNow);
-                        return result;
-                    }
-                    catch (Exception e)
-                    {
-                        logger?.LogError(ex, "Failed to send 404");
-                        return Results.NotFound(e.Message);
-                    }
+                    return Results.NotFound("Card image not found");
                 }
             })
                 .WithName("Get Card Image")
