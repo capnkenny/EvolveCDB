@@ -14,7 +14,7 @@ namespace EvolveCDB.Services
         {
             using var httpClient = _httpClientFactory.CreateClient("bushiroad");
             httpClient.DefaultRequestHeaders.Add("Referer", $"https://decklog-en.bushiroad.com/view/{code}");
-            var response = await httpClient.GetAsync($"system/app/api/view/{code}");
+            var response = await httpClient.PostAsync($"system/app/api/view/{code}", null);
             response.EnsureSuccessStatusCode();
 
             string responseJson = await response.Content.ReadAsStringAsync();
