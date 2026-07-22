@@ -5,6 +5,7 @@ using EvolveCDB.Model;
 using EvolveCDB.Services;
 using Microsoft.AspNetCore.Routing.Constraints;
 using Microsoft.Extensions.Caching.Memory;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -52,18 +53,18 @@ namespace EvolveCDB
                 conf.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:139.0) Gecko/20100101 Firefox/139.0");
                 conf.DefaultRequestHeaders.Add("Accept", "application/json, text/plain, */*");
                 conf.DefaultRequestHeaders.Add("Accept-Language", "en-US,en;q=0.5");
-                conf.DefaultRequestHeaders.Add("Accept-Encoding", "gzip, deflate, br, zstd");
                 conf.DefaultRequestHeaders.Add("Origin", "https://decklog-en.bushiroad.com");
-                conf.DefaultRequestHeaders.Add("Connection", "keep-alive");
                 conf.DefaultRequestHeaders.Add("Cookie", "CookieConsent={stamp:%273DYKV73AFO5pbjzWoPswMtCoN6lk1uQ2so6frmuwtakIxpvXO/uRgg==%27%2Cnecessary:true%2Cpreferences:true%2Cstatistics:true%2Cmarketing:true%2Cmethod:%27explicit%27%2Cver:1%2Cutc:1714065861850%2Cregion:%27us-34%27};");
                 conf.DefaultRequestHeaders.Add("Sec-Fetch-Dest", "empty");
                 conf.DefaultRequestHeaders.Add("Sec-Fetch-Mode", "cors");
                 conf.DefaultRequestHeaders.Add("Sec-Fetch-Site", "same-origin");
                 conf.DefaultRequestHeaders.Add("Pragma", "no-cache");
                 conf.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
-                conf.DefaultRequestHeaders.Add("TE", "trailers");
+            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.All // I think it only needs gzip but yolo - matt j.
             });
-            
+
             builder.Services.AddMemoryCache();
 
             builder.Services.AddHttpClient("github", conf =>
@@ -115,7 +116,7 @@ namespace EvolveCDB
                     Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents,
                     MinimumLogLevel = LogLevel.Debug
                 });
-                
+
             var app = builder.Build();
 
             app.MapSwagger("/{documentName}/swagger.json");
