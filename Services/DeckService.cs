@@ -32,13 +32,10 @@ namespace EvolveCDB.Services
                 List<Card> evolveCardResults = [];
                 var cards = _monitor.CurrentValue.Cards;
 
-                foreach (var lc in naviDeck.LeaderCard)
+                var matching = cards.Where(c => c.CardId.Equals(naviDeck.LeaderCard.CardNumber, StringComparison.InvariantCultureIgnoreCase));
+                if (matching.Any())
                 {
-                    var matching = cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
-                    if (matching.Any())
-                    {
-                        leaderCard = matching.First();
-                    }
+                    leaderCard = matching.First();
                 }
 
                 foreach (var mc in naviDeck.MainDeck)
@@ -114,8 +111,8 @@ namespace EvolveCDB.Services
             var distinctMain = list.MainCards.DistinctBy(card => card.CardId);
             var textMain = distinctMain.Select(card =>
             {
-                return new TextualCard 
-                { 
+                return new TextualCard
+                {
                     CardText = $"{card.Name} ({card.CardId}) x{list.MainCards.Count(c => c.CardId == card.CardId)}"
                 };
             });
