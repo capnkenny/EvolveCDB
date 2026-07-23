@@ -21,17 +21,18 @@ namespace EvolveCDB.Services
 
             if (JsonSerializer.Deserialize(responseJson, typeof(NaviDeckList)) is NaviDeckList naviDeck)
             {
-                if (naviDeck.GameId != ShadowverseEvolveGameId)
-                {
-                    throw new ArgumentException("Deck retrieved was not a valid Shadowverse: Evolve deck.");
-                }
+                // They removed this field - what do we do here? - Matt J.
+                //if (naviDeck.GameId != ShadowverseEvolveGameId)
+                //{
+                //    throw new ArgumentException("Deck retrieved was not a valid Shadowverse: Evolve deck.");
+                //}
 
                 Card leaderCard = null!;
                 List<Card> mainCardResults = [];
                 List<Card> evolveCardResults = [];
                 var cards = _monitor.CurrentValue.Cards;
 
-                foreach (var lc in naviDeck.LeaderDeck)
+                foreach (var lc in naviDeck.LeaderCard)
                 {
                     var matching = cards.Where(c => c.CardId.Equals(lc.CardNumber, StringComparison.InvariantCultureIgnoreCase));
                     if (matching.Any())
@@ -70,7 +71,7 @@ namespace EvolveCDB.Services
 
                 return new DeckList
                 {
-                    Name = naviDeck.Title,
+                    Name = naviDeck.Name,
                     DeckCode = code,
                     LeaderCard = leaderCard,
                     MainCards = mainCardResults,
